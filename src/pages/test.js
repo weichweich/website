@@ -12,262 +12,101 @@ import { Checkbox,
   ThemeProvider
 } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { useUserVotes } from '../hooks/use-votes';
-import { useUserDistributions } from '../hooks/use-distributions';
-import { current } from 'tailwindcss/colors';
-import { getLuckMultiplier, lucksForConfig, microToKSM } from '../utils';
-import { isEqual } from 'lodash';
+import useSporran from '../hooks/use-sporran'
+import useUser from '../hooks/use-sporran-user';
 import Button from '../components/ui/button';
-import ConfigTable from '../components/ui/ConfigTable'
-import Loader from '../components/ui/loader';
+import * as Kilt from '@kiltprotocol/sdk-js'
+import { websiteConfig } from '../data/website-config';
 
-const theme = createTheme({
-  typography: {
-    fontFamily: [
-      'Ubuntu Mono',
-      'monospace'
-    ].join(','),
-  },
-})
+/**
+ * (0)
+ * Add kilt to window in script tag to next js
+ * https://nextjs.org/docs/basic-features/script
+ */
+
+/**
+ * (I)
+ * Register a dApp full chain DID via either sporran wallet or check the
+ * workshop
+ */
+
+/**
+ * (II)
+ * setup communication between dapp and sporran extension
+ * https://docs.kilt.io/docs/develop/dApp/session
+ * 
+ * const api = Kilt.ConfigService.get('api')
+ * const did = 'did:kilt:4smcAoiTiCLaNrGhrAM4wZvt5cMKEGm8f3Cu9aFrpsh5EiNV'
+ * const dAppName = 'Your dApp Name'
+ */
+
+/**
+ * (III)
+ * Frontend claim flow: https://docs.kilt.io/docs/develop/workshop/claimer/request
+ *
+ * 1. we need to create a claim from the frontend
+ * a) have the ctype, content, and lightDID from the claimer ready
+ * b) can we get lightDID from sporran?
+ * c) claim = Kilt.Claim.fromCTypeAndClaimContents(ctype, content, lightDid)
+ * d) content can e.g. look like this:
+ * {
+ *  age: 28,
+ *  name: 'Max Mustermann'
+ * }
+ *
+ * 2. then we need to create a credential from that claim
+ * a) credential = Kilt.Credential.fromClaim(claim)
+ */
+
 
 function Test() {
-  const { data: refConfig, isLoading: isRefConfigLoading } = useConfig( 229 )
-  const { data: userDistributions, isLoading: isUserDistributionLoading } = useUserDistributions( 229 )
+  const { user, connected, login, logout } = useUser()
+  // const sporran = useSporran()
 
-  const userDistribution = userDistributions?.[0]
+  const setupSporran = async () => {
+    await Kilt.connect(websiteConfig.kilt_wss)
+    const api = Kilt.ConfigService.get('api')
+    const did = 'did:kilt:4q2KHrnD4ZEmaiCCJSsmaFLvaM9DVW8zch3N2mqYG91JHa6L'
+    const dAppName = 'Proof of Chaos dApp'
 
-  const [ values, setValues ] = useState({
-    ksm: 5,
-    dragon: {
-      babyEquipped: false,
-      toddlerEquipped: false,
-      adolescentEquipped: false,
-      adultEquipped: false,
-    },
-    quizCorrect: false,
-  })
-
-  const resetToUserVote = () => {
-    setValues( {
-      ksm: microToKSM( userDistribution?.amountConsidered ),
-      dragon: {
-        ...dragonEquippedStringToBools( userDistribution?.dragonEquipped )
-      }
-    })
-  }
-
-  const dragonEquippedStringToBools = ( equippedString ) => {
-    let dragonBools = {
-      babyEquipped: false,
-      toddlerEquipped: false,
-      adolescentEquipped: false,
-      adultEquipped: false,
+    const encodedFullDid = await api.call.did.query(Kilt.Did.toChain(did))
+    console.log( 'encodedFullDid', encodedFullDid )
+    const { document } = Kilt.Did.linkedInfoFromChain(encodedFullDid)
+    console.log( 'linkedInfo', document )
+    //If there is no DID, or the DID does not have any key agreement key, return
+    if (!document.keyAgreement || !document.keyAgreement[0]) {
+      console.log('there is no DID, or the DID does not have any key agreement key')
+      return
     }
+    const dAppEncryptionKeyUri =
+      `${document.uri}${document.keyAgreement[0].id}`
+    console.log( 'dAppEncryptionKeyUri', dAppEncryptionKeyUri )
 
-    switch ( equippedString ) {
-      case "Adult":
-        dragonBools.adultEquipped = true;
-        break;
-      case "Adolescent":
-        dragonBools.adolescentEquipped = true;
-        break;
-      case "Toddler":
-        dragonBools.toddlerEquipped = true;
-        break;
-      case "Baby":
-        dragonBools.babyEquipped = true;
-        break;
-      default:
-    }
-    return dragonBools
+    /// IIIIMPORTANT ---- MUST COME FROM SERVER
+    const challenge = 'i should come from the server'
+
+    const session = await window.kilt.sporran.startSession(
+      dAppName,
+      dAppEncryptionKeyUri,
+      challenge
+    )
   }
 
-  const isWalletSettingsShowing =
-    values.ksm === microToKSM( userDistribution?.amountConsidered ) &&
-    isEqual( values.dragon, dragonEquippedStringToBools( userDistribution?.dragonEquipped ) )
-
-  useEffect(() => {
-    const dragonBools = dragonEquippedStringToBools( userDistribution?.dragonEquipped )
-    setValues({
-      ...values,
-      dragon: {
-        ...dragonBools,
-      },
-      ksm: microToKSM( userDistribution?.amountConsidered ),
-    })
-  }, [ userDistribution ])
-
-
-  if ( isRefConfigLoading || isUserDistributionLoading ) {
-    return <Loader />
+  const generateCredential = () => {
+    
+    console.log( 'generateCredential', window.kilt.sporran )
   }
 
-  const currentLuckMultiplier = getLuckMultiplier( values.dragon, refConfig )
-  const lucks = lucksForConfig( values.ksm, refConfig, currentLuckMultiplier )
-  const chartData = [
-    { x: `common\n${ parseFloat(lucks['common']).toFixed(2) }%`, y: lucks['common'] },
-    { x: `rare\n${ parseFloat(lucks['rare']).toFixed(2) }%`, y: lucks['rare'] },
-    { x: `epic\n${ parseFloat(lucks['epic']).toFixed(2) }%`, y: lucks['epic'] },
-  ]
-
-  const handleCheckBoxChange = ( e ) => {
-    const clickedDragonBonus = [
-      'babyEquipped',
-      'toddlerEquipped',
-      'adolescentEquipped',
-      'adultEquipped'
-    ].includes(e.target.name)
-    setValues({
-      ...values,
-      dragon: {
-        ...values.dragon,
-        babyEquipped: clickedDragonBonus ? false : values.dragon.babyEquipped,
-        toddlerEquipped: clickedDragonBonus ? false : values.dragon.toddlerEquipped,
-        adolescentEquipped: clickedDragonBonus ? false : values.dragon.adolescentEquipped,
-        adultEquipped: clickedDragonBonus ? false : values.dragon.adultEquipped,
-        [e.target.name]: e.target.checked,
-      },
-    });
-  }
-
-  const handleSliderChange = ( e ) => {
-    const voteAmountWithConviction = parseInt( e.target.value )
-    setValues( {
-      ...values,
-      ksm: voteAmountWithConviction,
-    } )
-  }
-
-  const sliderValue = values.ksm
-
-  const marks = userDistribution ? [
-    {
-      value: 0,
-      label: '0',
-    },
-    {
-      value: microToKSM( userDistribution.amountConsidered ),
-      label: 'Your Vote',
-    },
-    {
-      value: refConfig?.maxValue,
-      label: `${ refConfig?.maxValue } KSM`,
-    },
-  ] : [
-    {
-      value: 0,
-      label: '0',
-    },
-    {
-      value: refConfig?.maxValue,
-      label: `${ refConfig?.maxValue } KSM`,
-    },
-  ]
-
-  return (
-    <>
-      <div className="w-full flex justify-center">
-        <div className="max-w-2xl mx-10 chart-wrapper">
-          <VictoryPie
-            padAngle={2}
-            data={ chartData }
-            colorScale={["lavender", "turquoise", "gold", "cyan" ]}
-            className="overflow-visible px-10"
-            innerRadius={60}
-            labelRadius={({ radius }) => radius - 70 }
-            style={{ labels: { fontSize: 18 }, overflow: 'visible' }}
-          />
-        </div>
-        <div className="flex flex-col">
-          <ThemeProvider theme={ theme }>
-            <FormControl sx={{ m: 3 }} component="fieldset" variant="standard">
-              <FormLabel component="legend">Wallet Properties when voting / sendout</FormLabel>
-              <FormGroup>
-                {/* <FormControlLabel
-                  control={
-                    <Checkbox 
-                      checked={ values.quizCorrect }
-                      onChange={handleCheckBoxChange}
-                      name="quizCorrect"
-                    />
-                  }
-                  label="Quiz Answered Correctly"
-                /> */}
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={ values.dragon.babyEquipped }
-                      onChange={handleCheckBoxChange}
-                      name="babyEquipped"
-                    />
-                  }
-                  label="Baby Dragon Equipped"
-                />
-                <FormControlLabel
-                  control={
-                    <Checkbox 
-                      checked={ values.dragon.toddlerEquipped }
-                      onChange={handleCheckBoxChange}
-                      name="toddlerEquipped"
-                    />
-                  }
-                  label="Toddler Dragon Equipped"
-                />
-                <FormControlLabel
-                  control={
-                    <Checkbox 
-                      checked={ values.dragon.adolescentEquipped }
-                      onChange={handleCheckBoxChange}
-                      name="adolescentEquipped"
-                    />
-                  }
-                  label="Adolescent Dragon Equipped"
-                />
-                <FormControlLabel
-                  control={
-                    <Checkbox 
-                      checked={ values.dragon.adultEquipped }
-                      onChange={handleCheckBoxChange}
-                      name="adultEquipped"
-                    />
-                  }
-                  label="Adult Dragon Equipped"
-                />
-                <FormHelperText>Your Luck Multiplier is: { currentLuckMultiplier }</FormHelperText>
-                <div className="pt-5">
-                  Vote Amount With Conviction
-                  <Slider
-                    min={ 0 }
-                    max={ refConfig?.maxValue ? refConfig.maxValue + 10 : 50 }
-                    marks={ marks }
-                    value={ sliderValue }
-                    step={ 0.1 }
-                    aria-label="Default"
-                    valueLabelDisplay="auto"
-                    onChange={ handleSliderChange }
-                  />
-                </div>
-              </FormGroup>
-              <FormHelperText>See how the luck distribution differs for different values</FormHelperText>
-              <Button
-                onClick={ resetToUserVote }
-                variant={ isWalletSettingsShowing ? 'disabled' : 'calm' }
-                size={ 'small' }
-                className={ 'mt-2' }
-                disabled={ isWalletSettingsShowing ? true : false }
-              >
-                Reset to your considered values
-              </Button>
-            </FormControl>
-          </ThemeProvider>
-        </div>
-      </div>
-      <div>
-      <h3 className="text-xl mb-4">Config for sendout</h3>
-        <ConfigTable json={ refConfig } />
-      </div>
-    </>
-  )
+  return <div className="mx-auto max-w-4xl ">
+    <div className="flex flex-col">
+      {/* <p>sporran loaded: { sporran ? sporran.version : 'false' }</p>
+      <p>session: { JSON.stringify(session) }</p> */}
+      <Button variant="calm" onClick={ setupSporran }>setup sporran communication</Button>
+      <Button variant="calm" onClick={ generateCredential }>generate claim + credential</Button>
+      <Button variant="calm" onClick={ login }>login</Button>
+      <Button variant="calm" onClick={ logout }>logout</Button>
+    </div>
+  </div>
 }
 
 Test.getLayout = function getLayout(page){

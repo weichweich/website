@@ -13,6 +13,7 @@ import {
   QueryClientProvider,
 } from "@tanstack/react-query";
 import { DefaultSeo, NextSeo } from 'next-seo';
+import Script from 'next/script';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -25,7 +26,7 @@ const queryClient = new QueryClient({
 
 function MyApp({ Component, pageProps }) {
   const getLayout = Component.getLayout ?? ((page) => page)
-  
+
   return (
     <>
       <Head>
@@ -35,6 +36,9 @@ function MyApp({ Component, pageProps }) {
         />
       </Head>
       <QueryClientProvider client={queryClient}>
+        <Script id="load-sporran-kilt-extension">
+          {`window.kilt = {}`}
+        </Script>
         <DefaultSeo
           { ...seoConfig }
         />
