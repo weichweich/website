@@ -66,7 +66,9 @@ function Test() {
   const setupSporran = async () => {
     await Kilt.connect(websiteConfig.kilt_wss)
     const api = Kilt.ConfigService.get('api')
-    const did = 'did:kilt:4q2KHrnD4ZEmaiCCJSsmaFLvaM9DVW8zch3N2mqYG91JHa6L'
+
+    const did_mnemonic = 'worth lava drop uphold pistol today note gasp argue dignity unknown sure'
+    const did = 'did:kilt:4scGmdniRdTVREjqQdiWrsPVSmD1xZK4UanvkikzTwy4pc1j'
     const dAppName = 'Proof of Chaos dApp'
 
     const encodedFullDid = await api.call.did.query(Kilt.Did.toChain(did))
