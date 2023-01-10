@@ -6,7 +6,7 @@ import ModalsContainer from '../components/modals/container';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import DrawersContainer from '../components/drawer/container';
-import seoConfig from '../next-seo.config' 
+import seoConfig from '../next-seo.config'
 
 import {
   QueryClient,
@@ -34,13 +34,16 @@ function MyApp({ Component, pageProps }) {
           name="viewport"
           content="width=device-width, initial-scale=1 maximum-scale=1"
         />
+
       </Head>
       <QueryClientProvider client={queryClient}>
-        <Script id="load-sporran-kilt-extension">
-          {`window.kilt = {}`}
+        <Script id="load-sporran-kilt-extension">{`window.kilt = { }`}
+        </Script>
+        <Script id="load-sporran-kilt-extension2">
+          {`console.log("hello")`}
         </Script>
         <DefaultSeo
-          { ...seoConfig }
+          {...seoConfig}
         />
         {getLayout(<Component {...pageProps} />)}
         <DrawersContainer />

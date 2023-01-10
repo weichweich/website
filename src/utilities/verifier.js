@@ -64,11 +64,12 @@ export async function getFullDid() {
   // const fullDid = await Did.FullDidDetails.fromChainInfo(process.env.VERIFIER_DID_URI)
   // return fullDid
 
-  const attesterDidMnemonic = process.env.ATTESTER_DID_MNEMONIC
-  const { authentication, attestation } =
-    generateKeypairs(attesterDidMnemonic)
-  const attesterDidUri = Kilt.Did.getFullDidUriFromKey(authentication)
-  const encodedFullDid = await api.call.did.query(Kilt.Did.toChain(attesterDidUri))
+  // const attesterDidMnemonic = process.env.ATTESTER_DID_MNEMONIC
+  // const { authentication, attestation } =
+  //   generateKeypairs(attesterDidMnemonic)
+  // const attesterDidUri = Kilt.Did.getFullDidUriFromKey(authentication)
+
+  const encodedFullDid = await api.call.did.query(Kilt.Did.toChain(process.env.VERIFIER_DID_URI))
 
   return encodedFullDid
 }

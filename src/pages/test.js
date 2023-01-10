@@ -1,7 +1,8 @@
 import Layout from '../layouts/layout'
 import { useConfig } from '../hooks/use-config';
 import { VictoryPie } from 'victory';
-import { Checkbox,
+import {
+  Checkbox,
   createTheme,
   FormControl,
   FormControlLabel,
@@ -65,53 +66,59 @@ function Test() {
 
   const setupSporran = async () => {
     await Kilt.connect(websiteConfig.kilt_wss)
-    const api = Kilt.ConfigService.get('api')
+    const kiltApi = Kilt.ConfigService.get('api')
 
-    const did_mnemonic = 'worth lava drop uphold pistol today note gasp argue dignity unknown sure'
-    const did = 'did:kilt:4scGmdniRdTVREjqQdiWrsPVSmD1xZK4UanvkikzTwy4pc1j'
+    const did = 'did:kilt:4qsuK1AEoFBBRTwyuz7ip8CtLEydJqL12ybZk11Fbqy4HSU3'
     const dAppName = 'Proof of Chaos dApp'
-
-    const encodedFullDid = await api.call.did.query(Kilt.Did.toChain(did))
-    console.log( 'encodedFullDid', encodedFullDid )
+    const encodedFullDid = await kiltApi.call.did.query(Kilt.Did.toChain(did))
+    console.log('encodedFullDid', encodedFullDid)
     const { document } = Kilt.Did.linkedInfoFromChain(encodedFullDid)
-    console.log( 'linkedInfo', document )
+    console.log('linkedInfo', document)
     //If there is no DID, or the DID does not have any key agreement key, return
     if (!document.keyAgreement || !document.keyAgreement[0]) {
       console.log('there is no DID, or the DID does not have any key agreement key')
       return
     }
-    const dAppEncryptionKeyUri =
-      `${document.uri}${document.keyAgreement[0].id}`
-    console.log( 'dAppEncryptionKeyUri', dAppEncryptionKeyUri )
+    const dAppEncryptionKeyUri = `${document.uri}${document.keyAgreement[0].id}`
+
+    console.log('dAppEncryptionKeyUri', dAppEncryptionKeyUri)
 
     /// IIIIMPORTANT ---- MUST COME FROM SERVER
-    const challenge = 'i should come from the server'
+    const challenge = "123"
+    
 
-    const session = await window.kilt.sporran.startSession(
-      dAppName,
-      dAppEncryptionKeyUri,
-      challenge
-    )
+    console.log("kilt", window.kilt.sporran)
+    try {
+      const session = await window.kilt.sporran.startSession(
+        dAppName,
+        dAppEncryptionKeyUri,
+        challenge
+      )
+      console.log("allg", session)
+    } catch (err) {
+      console.log('>>> err', err);
+    }
+
   }
 
   const generateCredential = () => {
-    
-    console.log( 'generateCredential', window.kilt.sporran )
+
+    console.log('generateCredential', window.kilt.sporran)
   }
 
   return <div className="mx-auto max-w-4xl ">
     <div className="flex flex-col">
       {/* <p>sporran loaded: { sporran ? sporran.version : 'false' }</p>
       <p>session: { JSON.stringify(session) }</p> */}
-      <Button variant="calm" onClick={ setupSporran }>setup sporran communication</Button>
-      <Button variant="calm" onClick={ generateCredential }>generate claim + credential</Button>
-      <Button variant="calm" onClick={ login }>login</Button>
-      <Button variant="calm" onClick={ logout }>logout</Button>
+      <Button variant="calm" onClick={setupSporran}>setup sporran communication</Button>
+      <Button variant="calm" onClick={generateCredential}>generate claim + credential</Button>
+      <Button variant="calm" onClick={login}>login</Button>
+      <Button variant="calm" onClick={logout}>logout</Button>
     </div>
   </div>
 }
 
-Test.getLayout = function getLayout(page){
+Test.getLayout = function getLayout(page) {
   return <Layout>{page}</Layout>
 }
 
