@@ -1,25 +1,30 @@
 {
-    "@context": [
-        "https://www.w3.org/2018/credentials/v1",
-        "https://identity.foundation/.well-known/did-configuration/v1"
-    ],
-    "issuer": "did:kilt:4qsuK1AEoFBBRTwyuz7ip8CtLEydJqL12ybZk11Fbqy4HSU3",
-    "issuanceDate": "2023-01-10T13:22:36.192Z",
-    "expirationDate": "2028-01-09T13:22:36.198Z",
-    "type": [
-        "VerifiableCredential",
-        "DomainLinkageCredential",
-        "KiltCredential2020"
-    ],
-    "credentialSubject": {
-        "id": "did:kilt:4qsuK1AEoFBBRTwyuz7ip8CtLEydJqL12ybZk11Fbqy4HSU3",
-        "origin": "http://localhost:3000",
-        "rootHash": "0x2f53b063cd5cff4a0f4af0436450f124567b6a0bf83a1ba8cd333c27f3391476"
-    },
-    "proof": {
-        "type": "KILTSelfSigned2020",
-        "proofPurpose": "assertionMethod",
-        "verificationMethod": "did:kilt:4qsuK1AEoFBBRTwyuz7ip8CtLEydJqL12ybZk11Fbqy4HSU3#0x58216e1d6120f32cd16e21c7d2ce94aec792924f88f1eacbbe367d53956e45dd",
-        "signature": "0x8eec6dea8141b7126fb0db292210b79df02236cd72a0b26e1c102e5628333f559b54cd022b4dbc31d52c05fc664a4dceb7b5ea2d34477e0a9ffe1cec52034900"
-    }
+    "@context": "https://identity.foundation/.well-known/did-configuration/v1",
+    "linked_dids": [
+        {
+            "@context": [
+                "https://www.w3.org/2018/credentials/v1",
+                "https://identity.foundation/.well-known/did-configuration/v1"
+            ],
+            "issuer": "did:kilt:4qsuK1AEoFBBRTwyuz7ip8CtLEydJqL12ybZk11Fbqy4HSU3",
+            "issuanceDate": "2023-01-10T13:22:36.192Z",
+            "expirationDate": "2028-01-09T13:22:36.198Z",
+            "type": [
+                "VerifiableCredential",
+                "DomainLinkageCredential",
+                "KiltCredential2020"
+            ],
+            "credentialSubject": {
+                "id": "did:kilt:4qsuK1AEoFBBRTwyuz7ip8CtLEydJqL12ybZk11Fbqy4HSU3",
+                "origin": "http://localhost:3000",
+                "rootHash": "0x2f53b063cd5cff4a0f4af0436450f124567b6a0bf83a1ba8cd333c27f3391476"
+            },
+            "proof": {
+                "type": "KILTSelfSigned2020",
+                "proofPurpose": "assertionMethod",
+                "verificationMethod": "did:kilt:4qsuK1AEoFBBRTwyuz7ip8CtLEydJqL12ybZk11Fbqy4HSU3#0x58216e1d6120f32cd16e21c7d2ce94aec792924f88f1eacbbe367d53956e45dd",
+                "signature": "0x8eec6dea8141b7126fb0db292210b79df02236cd72a0b26e1c102e5628333f559b54cd022b4dbc31d52c05fc664a4dceb7b5ea2d34477e0a9ffe1cec52034900"
+            }
+        }
+    ]
 }
