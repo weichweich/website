@@ -5,6 +5,7 @@ import Document, {
   Main,
   NextScript,
 } from 'next/document';
+import Script from 'next/script';
 
 import { ServerStyleSheet } from 'styled-components'
 
@@ -22,6 +23,9 @@ class CustomDocument extends Document {
           <link rel="shortcut icon" href="/favicon.ico" />
         </Head>
         <body>
+          <Script strategy='beforeInteractive' id="load-sporran-kilt-extension">
+            {`window.kilt = {};Object.defineProperty(window.kilt, 'meta', {value: { versions: { credentials: '3.0' } },enumerable: false});`}
+          </Script>
           <Main />
           <NextScript />
         </body>

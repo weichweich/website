@@ -37,11 +37,6 @@ function MyApp({ Component, pageProps }) {
 
       </Head>
       <QueryClientProvider client={queryClient}>
-        <Script id="load-sporran-kilt-extension">{`window.kilt = { }`}
-        </Script>
-        <Script id="load-sporran-kilt-extension2">
-          {`console.log("hello")`}
-        </Script>
         <DefaultSeo
           {...seoConfig}
         />
