@@ -94,6 +94,17 @@ const emailCType = {
   type: 'object'
 }
 
+function isTrustedAttester(attester) {
+  // We only trust SocialKYC for now.
+  console.log("attester", attester)
+
+  // SocialKYC on spiritnet:
+  // return attester === "did:kilt:4pnfkRn5UurBJTW92d9TaVLR2CqJdY4z5HPjrEbpGyBykare"
+
+  // SocialKYC on peregrine:
+  return attester === "did:kilt:4pehddkhEanexVTTzWAtrrfo2R7xPnePpuiJLC7shQU894aY"
+}
+
 function Test() {
   const { user, connected, login, logout } = useUser();
   const [session, setSession] = useState()
@@ -223,9 +234,33 @@ function Test() {
       if (decryptedMessage.body.type !== 'submit-credential') {
         throw new Error('Unexpected message type')
       }
+      const credential = decryptedMessage.body.content[0]
+      await Kilt.Credential.verifyPresentation(credential);
 
-      await Kilt.Credential.verifyPresentation(decryptedMessage.body.content[0]);
-      console.log("valid credential:", decryptedMessage.body.content[0]);
+      const api = Kilt.ConfigService.get('api')
+      const attestationChain = await api.query.attestation.attestations(
+        credential.rootHash
+      )
+    
+      const attestation = Kilt.Attestation.fromChain(
+        attestationChain,
+        credential.rootHash
+      )
+    
+      if (attestation.revoked) {
+        throw new Error("Credential has been revoked and hence it's not valid.")
+      }
+      if (attestation.cTypeHash !== credential.claim.cTypeHash) {
+        console.log(attestation.cTypeHash, credential.claim.cTypeHash)
+        throw new Error("Credential has invalid ctype and hence it's not valid.")
+      }
+      if (!isTrustedAttester(attestation.owner)) {
+        throw new Error("Credential has an untrusted attester and hence it's not valid.")
+      }
+      console.log(
+        "The claim is valid. Claimer's email:",
+        credential.claim.contents.Email
+      )
     })
   };
 
