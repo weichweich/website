@@ -60,6 +60,10 @@ import { mnemonicGenerate, mnemonicToMiniSecret, randomAsHex } from '@polkadot/u
  * a) credential = Kilt.Credential.fromClaim(claim)
  */
 
+// Dapp DID URI
+const VERIFIER_DID_URI = 'did:kilt:...'
+const VERIFIER_MNEMONIC = '...'
+
 function generateKeypairs(mnemonic = mnemonicGenerate()) {
   const authentication = Kilt.Utils.Crypto.makeKeypairFromSeed(
     mnemonicToMiniSecret(mnemonic)
@@ -115,9 +119,9 @@ function Test() {
     await Kilt.connect(websiteConfig.kilt_wss);
     const kiltApi = Kilt.ConfigService.get("api");
 
-    const did = "did:kilt:4tWp3bN2eGrahhYS6kZ725eimhnHx8hnsS6qZ4177FHH1dAT";
+    const verifierKeys = generateKeypairs(VERIFIER_MNEMONIC)
     const dAppName = "Proof of Chaos dApp";
-    const encodedFullDid = await kiltApi.call.did.query(Kilt.Did.toChain(did));
+    const encodedFullDid = await kiltApi.call.did.query(Kilt.Did.toChain(VERIFIER_DID_URI));
     console.log("encodedFullDid", encodedFullDid);
     const { document } = Kilt.Did.linkedInfoFromChain(encodedFullDid);
     console.log("linkedInfo", document);
@@ -133,7 +137,7 @@ function Test() {
     console.log("dAppEncryptionKeyUri", dAppEncryptionKeyUri);
 
     /// IIIIMPORTANT ---- MUST COME FROM SERVER
-    const challenge = "123";
+    const challenge = Kilt.Utils.Crypto.u8aToHex("123");
 
     console.log("kilt", window.kilt.sporran);
     let newSession;
@@ -148,10 +152,30 @@ function Test() {
       console.log(">>> err", err);
       return;
     }
-    setSession(newSession)
+
     const { encryptionKeyUri, encryptedChallenge, nonce } = newSession;
+    const encryptionKey = await Kilt.Did.resolveKey(encryptionKeyUri)
+    const decryptedBytes = Kilt.Utils.Crypto.decryptAsymmetric(
+      { box: encryptedChallenge, nonce },
+      encryptionKey.publicKey,
+      verifierKeys.encryption.secretKey // derived from your seed phrase
+    )
+    // If it fails to decrypt, return.
+    if (!decryptedBytes) {
+      throw new Error("couldn't decrypt")
+    }
+    
+    const decryptedChallenge = Kilt.Utils.Crypto.u8aToHex(decryptedBytes)
+    
+    // Compare the decrypted challenge to the challenge you stored earlier.
+    if (decryptedChallenge !== challenge) {
+      console.log(decryptedChallenge, challenge)
+      throw new Error("Invalid challenge")
+
+    }
+
+    setSession(newSession)
     console.log(encryptionKeyUri)
-    const encryptionKey = await Kilt.Did.resolveKey(encryptionKeyUri);
     console.log(encryptionKey);
     if (!encryptionKey) {
       throw "an encryption key is required";
@@ -167,10 +191,8 @@ function Test() {
 
     const requestChallenge = randomAsHex(24);
 
-    const verifierDid = 'did:kilt:VERIFIER DID'
-    const verifierDidDoc = await Kilt.Did.resolve(verifierDid)
-    const verifierMnemomic = 'INPUT MNEMONIC HERE'
-    const verifierKeys = generateKeypairs(verifierMnemomic)
+    const verifierDidDoc = await Kilt.Did.resolve(VERIFIER_DID_URI)
+    const verifierKeys = generateKeypairs(VERIFIER_MNEMONIC)
     const { did: claimerDid } = Kilt.Did.parse(session.encryptionKeyUri)
 
     const message = Kilt.Message.fromBody(
@@ -181,7 +203,7 @@ function Test() {
         },
         type: 'request-credential',
       },
-      verifierDid,
+      VERIFIER_DID_URI,
       claimerDid
     )
 
@@ -199,7 +221,7 @@ function Test() {
         return {
           data: box,
           nonce,
-          keyUri: `${verifierDid}${verifierDidDoc.document.keyAgreement[0].id}`
+          keyUri: `${VERIFIER_DID_URI}${verifierDidDoc.document.keyAgreement[0].id}`
         }
       },
       session.encryptionKeyUri
